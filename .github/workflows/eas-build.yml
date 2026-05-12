@@ -1,0 +1,54 @@
+name: EAS Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'android'
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build (push to main)
+        if: github.event_name == 'push'
+        run: eas build --platform android --profile preview --non-interactive
+
+      - name: Build (manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          PLATFORM=${{ github.event.inputs.platform }}
+          PROFILE=${{ github.event.inputs.profile }}
+          eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive
