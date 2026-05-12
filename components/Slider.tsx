@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { View, StyleSheet, PanResponder, LayoutChangeEvent } from 'react-native';
 
 interface SliderProps {
@@ -9,10 +9,26 @@ interface SliderProps {
 }
 
 export default function Slider({ value, min, max, onChange }: SliderProps) {
-  const [trackWidth, setTrackWidth] = useState(0);
-  const trackRef = useRef<View>(null);
+  const trackWidthRef = useRef(0);
+  const onChangeRef = useRef(onChange);
+  const minRef = useRef(min);
+  const maxRef = useRef(max);
+
+  onChangeRef.current = onChange;
+  minRef.current = min;
+  maxRef.current = max;
 
   const fraction = max > min ? (value - min) / (max - min) : 0;
+
+  const updateValue = useCallback((locationX: number) => {
+    const w = trackWidthRef.current;
+    if (w <= 0) return;
+    const clamped = Math.max(0, Math.min(locationX, w));
+    const newValue = Math.round(
+      minRef.current + (clamped / w) * (maxRef.current - minRef.current),
+    );
+    onChangeRef.current(newValue);
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -24,19 +40,12 @@ export default function Slider({ value, min, max, onChange }: SliderProps) {
       onPanResponderMove: (evt) => {
         updateValue(evt.nativeEvent.locationX);
       },
-    })
+    }),
   ).current;
 
-  const updateValue = (locationX: number) => {
-    if (trackWidth <= 0) return;
-    const clamped = Math.max(0, Math.min(locationX, trackWidth));
-    const newValue = Math.round(min + (clamped / trackWidth) * (max - min));
-    onChange(newValue);
-  };
-
-  const handleLayout = (e: LayoutChangeEvent) => {
-    setTrackWidth(e.nativeEvent.layout.width);
-  };
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    trackWidthRef.current = e.nativeEvent.layout.width;
+  }, []);
 
   return (
     <View
@@ -45,11 +54,13 @@ export default function Slider({ value, min, max, onChange }: SliderProps) {
       {...panResponder.panHandlers}
     >
       <View style={styles.trackBackground} />
-      <View style={[styles.trackFill, { width: `${fraction * 100}%` }]} />
+      <View
+        style={[styles.trackFill, { width: `${fraction * 100}%` }]}
+      />
       <View
         style={[
           styles.thumb,
-          { left: fraction * trackWidth - 8 },
+          { left: `${fraction * 100}%`, marginLeft: -8 },
         ]}
       />
     </View>
