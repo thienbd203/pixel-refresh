@@ -24,6 +24,9 @@ on:
           - preview
           - production
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -59,12 +62,83 @@ jobs:
         run: eas init --non-interactive --force
 
       - name: Build (push to main)
+        id: build_push
         if: steps.check_token.outputs.has_token == 'true' && github.event_name == 'push'
-        run: eas build --platform android --profile preview --non-interactive
+        run: |
+          BUILD_JSON=$(eas build --platform android --profile preview --non-interactive --json 2>/dev/null || true)
+          if [ -n "$BUILD_JSON" ]; then
+            echo "build_json=$BUILD_JSON" >> "$GITHUB_OUTPUT"
+            echo "did_build=true" >> "$GITHUB_OUTPUT"
+          else
+            eas build --platform android --profile preview --non-interactive
+            echo "did_build=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build (manual dispatch)
+        id: build_manual
         if: steps.check_token.outputs.has_token == 'true' && github.event_name == 'workflow_dispatch'
         run: |
           PLATFORM=${{ github.event.inputs.platform }}
           PROFILE=${{ github.event.inputs.profile }}
-          eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive
+          BUILD_JSON=$(eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive --json 2>/dev/null || true)
+          if [ -n "$BUILD_JSON" ]; then
+            echo "build_json=$BUILD_JSON" >> "$GITHUB_OUTPUT"
+            echo "did_build=true" >> "$GITHUB_OUTPUT"
+          else
+            eas build --platform "$PLATFORM" --profile "$PROFILE" --non-interactive
+            echo "did_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download APK from EAS
+        id: download
+        if: steps.check_token.outputs.has_token == 'true'
+        run: |
+          echo "Fetching latest build info..."
+          BUILD_URL=$(eas build:list --platform android --limit 1 --json --non-interactive | jq -r '.[0].artifacts.buildUrl // empty')
+
+          if [ -z "$BUILD_URL" ]; then
+            echo "No build artifact URL found, skipping download"
+            echo "has_apk=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Downloading APK from: $BUILD_URL"
+          curl -L -o pixel-refresh.apk "$BUILD_URL"
+
+          if [ -f pixel-refresh.apk ] && [ -s pixel-refresh.apk ]; then
+            echo "has_apk=true" >> "$GITHUB_OUTPUT"
+            echo "APK downloaded successfully ($(du -h pixel-refresh.apk | cut -f1))"
+          else
+            echo "has_apk=false" >> "$GITHUB_OUTPUT"
+            echo "APK download failed"
+          fi
+
+      - name: Get version for tag
+        id: version
+        if: steps.download.outputs.has_apk == 'true'
+        run: |
+          VERSION=$(jq -r '.expo.version' app.json)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          TAG="v${VERSION}-build.${SHORT_SHA}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.download.outputs.has_apk == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Pixel Refresh ${{ steps.version.outputs.tag }}"
+          body: |
+            ## Pixel Refresh ${{ steps.version.outputs.version }}
+
+            **Build:** `${{ github.sha }}`
+            **Profile:** preview
+            **Platform:** Android
+
+            ### Installation
+            1. Download `pixel-refresh.apk` below
+            2. Transfer to your Android device
+            3. Open the APK to install (enable "Install from unknown sources" if prompted)
+          files: pixel-refresh.apk
+          generate_release_notes: true
