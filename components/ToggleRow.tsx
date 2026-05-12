@@ -40,12 +40,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    fontSize: 18,
+    fontFamily: 'monospace',
+    fontSize: 14,
     fontWeight: '700',
     color: '#1c1b1b',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   description: {
-    fontSize: 14,
+    fontFamily: 'monospace',
+    fontSize: 11,
     color: '#444748',
     opacity: 0.7,
   },
