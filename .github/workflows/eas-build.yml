@@ -56,7 +56,7 @@ jobs:
 
       - name: Configure EAS project
         if: steps.check_token.outputs.has_token == 'true'
-        run: eas init --non-interactive
+        run: eas init --non-interactive --force
 
       - name: Build (push to main)
         if: steps.check_token.outputs.has_token == 'true' && github.event_name == 'push'
