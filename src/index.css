@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@400;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+@theme {
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-background: #fdf8f8;
+  --color-on-background: #1c1b1b;
+  --color-secondary-fixed: #f2e728;
+  --color-surface-container: #f1edec;
+  --color-on-surface-variant: #444748;
+  --color-surface: #fdf8f8;
+
+  --font-headline: "Anton", sans-serif;
+  --font-body: "Hanken Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-body);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
