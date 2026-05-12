@@ -1,8 +1,6 @@
 name: EAS Build
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       platform:
@@ -37,17 +35,20 @@ jobs:
 
       - run: npm ci
 
+      - name: Check EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "::error::EXPO_TOKEN secret is not set. Add it at Settings → Secrets → Actions."
+            echo "Generate a token at https://expo.dev/accounts/[account]/settings/access-tokens"
+            exit 1
+          fi
+
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build (push to main)
-        if: github.event_name == 'push'
-        run: eas build --platform android --profile preview --non-interactive
-
-      - name: Build (manual dispatch)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Build
         run: |
           PLATFORM=${{ github.event.inputs.platform }}
           PROFILE=${{ github.event.inputs.profile }}
