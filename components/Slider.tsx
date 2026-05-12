@@ -1,5 +1,10 @@
 import { useRef, useCallback } from 'react';
-import { View, StyleSheet, PanResponder, LayoutChangeEvent } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  PanResponder,
+  LayoutChangeEvent,
+} from 'react-native';
 
 interface SliderProps {
   value: number;
@@ -10,6 +15,8 @@ interface SliderProps {
 
 export default function Slider({ value, min, max, onChange }: SliderProps) {
   const trackWidthRef = useRef(0);
+  const trackPageXRef = useRef(0);
+  const containerRef = useRef<View>(null);
   const onChangeRef = useRef(onChange);
   const minRef = useRef(min);
   const maxRef = useRef(max);
@@ -20,10 +27,11 @@ export default function Slider({ value, min, max, onChange }: SliderProps) {
 
   const fraction = max > min ? (value - min) / (max - min) : 0;
 
-  const updateValue = useCallback((locationX: number) => {
+  const updateFromPageX = useCallback((pageX: number) => {
     const w = trackWidthRef.current;
     if (w <= 0) return;
-    const clamped = Math.max(0, Math.min(locationX, w));
+    const localX = pageX - trackPageXRef.current;
+    const clamped = Math.max(0, Math.min(localX, w));
     const newValue = Math.round(
       minRef.current + (clamped / w) * (maxRef.current - minRef.current),
     );
@@ -35,10 +43,13 @@ export default function Slider({ value, min, max, onChange }: SliderProps) {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
-        updateValue(evt.nativeEvent.locationX);
+        containerRef.current?.measure((_x, _y, _w, _h, pageX) => {
+          trackPageXRef.current = pageX ?? 0;
+          updateFromPageX(evt.nativeEvent.pageX);
+        });
       },
       onPanResponderMove: (evt) => {
-        updateValue(evt.nativeEvent.locationX);
+        updateFromPageX(evt.nativeEvent.pageX);
       },
     }),
   ).current;
@@ -49,6 +60,7 @@ export default function Slider({ value, min, max, onChange }: SliderProps) {
 
   return (
     <View
+      ref={containerRef}
       style={styles.container}
       onLayout={handleLayout}
       {...panResponder.panHandlers}
