@@ -53,15 +53,17 @@ export default function Slider({ value, min, max, onChange }: SliderProps) {
       onLayout={handleLayout}
       {...panResponder.panHandlers}
     >
-      <View style={styles.trackBackground} />
+      <View style={styles.trackBackground} pointerEvents="none" />
       <View
         style={[styles.trackFill, { width: `${fraction * 100}%` }]}
+        pointerEvents="none"
       />
       <View
         style={[
           styles.thumb,
           { left: `${fraction * 100}%`, marginLeft: -8 },
         ]}
+        pointerEvents="none"
       />
     </View>
   );
