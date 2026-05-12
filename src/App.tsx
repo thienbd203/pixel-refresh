@@ -294,13 +294,6 @@ const SessionView: React.FC<{
         )}
       </AnimatePresence>
 
-      {/* Edge metadata (very subtle) */}
-      {!isPaused && (
-        <div className="absolute top-8 left-8 right-8 flex justify-between pointer-events-none opacity-10">
-          <span className="font-mono text-[10px] uppercase">■ ACTIVE_PROCESS</span>
-          <span className="font-mono text-[10px] uppercase">TRTMT_{params.mode.replace(' ', '_')}</span>
-        </div>
-      )}
     </div>
   );
 };
