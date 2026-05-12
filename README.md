@@ -1,20 +1,79 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Pixel Refresh — OLED Treatment
 
-# Run and deploy your AI Studio app
+Professional pixel refresh and screen maintenance tool for OLED displays. Features color cycling, brightness control, and immersive treatment sessions.
 
-This contains everything you need to run your app locally.
+## Tech Stack
 
-View your app in AI Studio: https://ai.studio/apps/8c401b31-003c-47b9-ba53-2ae208620c7e
+- **Framework**: React Native + Expo (TypeScript, strict mode)
+- **Navigation**: expo-router (file-based)
+- **UI**: Custom components only — no UI library
 
-## Run Locally
+## Prerequisites
 
-**Prerequisites:**  Node.js
+- Node.js >= 18
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) (`npx expo`)
+- For native builds: [EAS CLI](https://docs.expo.dev/build/introduction/) (`npm i -g eas-cli`)
 
+## Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+npx expo start
+```
+
+Press `a` for Android, `i` for iOS, or `w` for web.
+
+## Project Structure
+
+```
+app/
+  _layout.tsx        → Root layout (Stack navigator)
+  index.tsx          → Settings screen
+  session.tsx        → Full-screen refresh screen
+components/
+  ModeChip.tsx       → Mode selection chip
+  DurationPicker.tsx → Duration option picker
+  SliderControl.tsx  → Labeled slider with badge
+  Slider.tsx         → Custom pan-based slider
+  ToggleRow.tsx      → Toggle switch row
+```
+
+## Building
+
+### Development Build
+
+```bash
+npx expo run:android
+npx expo run:ios
+```
+
+### Production Build (EAS)
+
+```bash
+eas build --platform android --profile production
+eas build --platform ios --profile production
+```
+
+### Web Export
+
+```bash
+npm run build:web
+```
+
+## CI/CD
+
+GitHub Actions workflows are configured in `.github/workflows/`:
+
+- **`lint.yml`** — TypeScript type-check on every push/PR
+- **`eas-build.yml`** — EAS Build triggered on push to `main` or manual dispatch
+
+To use EAS Build in CI, add the `EXPO_TOKEN` secret to your GitHub repository settings.
+Generate one at https://expo.dev/accounts/[account]/settings/access-tokens.
+
+## Key Dependencies
+
+- `expo-keep-awake` — keep screen on during session
+- `expo-brightness` — set brightness to max on start
+- `expo-status-bar` — hide status bar on play screen
+- `react-native-gesture-handler` — tap to pause
+- `react-native-reanimated` — smooth animations
